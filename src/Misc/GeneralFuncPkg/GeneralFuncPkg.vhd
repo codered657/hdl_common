@@ -11,6 +11,7 @@
 --                                  2) Added and_reduce and or_reduce.
 --                                  3) Added integer <=> slv conversion functions.
 --                                  4) Added pad_left.
+--      Nick Ogden      03/18/14    1) Removed bitwise AND,OR,XOR,NOT
 --
 
 library ieee;
@@ -280,10 +281,6 @@ package GeneralFuncPkg is
     type slv_1024_vector is array (natural range <>) of std_logic_vector(1024 downto 0);
     type slv_2048_vector is array (natural range <>) of std_logic_vector(2048 downto 0);
 
-    function bitwise_and (A : std_logic_vector; B : std_logic_vector) return std_logic_vector;
-    function bitwise_or (A : std_logic_vector; B : std_logic_vector) return std_logic_vector;
-    function bitwise_xor (A : std_logic_vector; B : std_logic_vector) return std_logic_vector;
-    function bitwise_not (A : std_logic_vector) return std_logic_vector;
     function and_reduce (A : std_logic_vector) return std_logic_vector;
     function or_reduce (A : std_logic_vector) return std_logic_vector;
     
@@ -299,83 +296,7 @@ package GeneralFuncPkg is
 end package GeneralFuncPkg;
 
 package body GeneralFuncPkg is
-    -- This function returns the bitwise AND of two std_logic_vectors or equal length.
-    function bitwise_and (A : std_logic_vector; B : std_logic_vector) return std_logic_vector is
-        
-        variable C : std_logic_vector(A'range);
-        
-        begin
-        
-        -- Check that the vectors are the same width.
-        assert A'length = B'length
-            report "Vectors are different lengths."
-            severity failure;
-        
-        -- Go through vector and-ing bits.
-        for i in A'range loop
-            C(i) := A(i) and B(i);
-        end loop;
-        
-        return C; -- Return result.
-        
-    end bitwise_and;
-    
-    -- This function returns the bitwise OR of two std_logic_vectors or equal length.
-    function bitwise_or (A : std_logic_vector; B : std_logic_vector) return std_logic_vector is
-        
-        variable C : std_logic_vector(A'range);
-        
-        begin
-        
-        -- Check that the vectors are the same width.
-        assert A'length = B'length
-            report "Vectors are different lengths."
-            severity failure;
-        
-        -- Go through vector or-ing bits.
-        for i in A'range loop
-            C(i) := A(i) or B(i);
-        end loop;
-        
-        return C; -- Return result.
-        
-    end bitwise_or;
-    
-    -- This function returns the bitwise XOR of two std_logic_vectors or equal length.
-    function bitwise_xor (A : std_logic_vector; B : std_logic_vector) return std_logic_vector is
-        
-        variable C : std_logic_vector(A'range);
-        
-        begin
-        
-        -- Check that the vectors are the same width.
-        assert A'length = B'length
-            report "Vectors are different lengths."
-            severity failure;
-        
-        -- Go through vector or-ing bits.
-        for i in A'range loop
-            C(i) := A(i) xor B(i);
-        end loop;
-        
-        return C; -- Return result.
-        
-    end bitwise_xor;
-    
-    -- This function returns the bitwise XOR of two std_logic_vectors or equal length.
-    function bitwise_not (A : std_logic_vector) return std_logic_vector is
-        
-        variable C : std_logic_vector(A'range);
-        constant ONES : std_logic_vector(A'range) := (others=>'1');
-        begin
-        
-        -- XOR vector with all ones will flip all bits.
-        C := bitwise_xor(A, ONES);
-        
-        return C; -- Return result.
-        
-    end bitwise_not;
-
+   
     -- This function returns the and of all bits in the passed std_logic_vector.
     function and_reduce (A : std_logic_vector) return std_logic is
         
