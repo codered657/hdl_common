@@ -9,10 +9,13 @@
 --                                  2) Added bitwise functions and log2().
 --      Steven Okai     03/18/14    1) Added vector types.
 --                                  2) Added and_reduce and or_reduce.
+--                                  3) Added integer <=> slv conversion functions.
+--                                  4) Added pad_left.
 --
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 package GeneralFuncPkg is
 
@@ -286,6 +289,13 @@ package GeneralFuncPkg is
     
     function log2(x : integer) return integer;
     
+    -- Returns unsigned integer representation of the passed std_logic_vector.
+    function slv_to_unsigned_int (A : std_logic_vector) return integer;
+    function slv_to_unsigned_int (A : std_logic_vector) return integer;
+    function unsigned_int_to_slv (A : natural; slv_width : positive) return std_logic_vector;
+    function signed_int_to_slv (A : integer; slv_width : positive) return std_logic_vector;
+    function pad_left (A : std_logic_vector, slv_width : positive; pad_bit : std_logic) return std_logic_vector;
+    
 end package GeneralFuncPkg;
 
 package body GeneralFuncPkg is
@@ -412,5 +422,61 @@ package body GeneralFuncPkg is
         return DivCount;
         
     end log2;
+    
+    -- Returns unsigned integer representation of the passed std_logic_vector.
+    function slv_to_unsigned_int (A : std_logic_vector) return integer is
+        
+        begin
+        
+        return to_integer(unsigned(A));
+    end slv_to_unsigned_int;
+    
+    -- Returns signed integer representation of the passed std_logic_vector.
+    function slv_to_unsigned_int (A : std_logic_vector) return integer is
+        
+        begin
+        
+        return to_integer(signed(A));
+    end slv_to_unsigned_int;
+    
+    -- Returns the std_logic_vector representation of passed unsigned integer (natural) with width slv_width.
+    function unsigned_int_to_slv (A : natural; slv_width : positive) return std_logic_vector is
+    
+        begin
+        
+        return std_logic_vector(to_unsigned(A, slv_width));
+        
+    end unsigned_int_to_slv;
+    
+    -- Returns the std_logic_vector representation of passed signed integer (natural) with width slv_width.
+    function signed_int_to_slv (A : integer; slv_width : positive) return std_logic_vector is
+    
+        begin
+        
+        return std_logic_vector(to_signed(A, slv_width));
+        
+    end signed_int_to_slv;
+    
+    -- Pads passed std_logic_vector to width alv_width with bit pad_bit.
+    function pad_left (A : std_logic_vector, slv_width : positive; pad_bit : std_logic) return std_logic_vector is
+    
+        variable B : std_logic_vector(slv_width-1 downto 0);
+        
+        begin
+        
+        assert slv_width > A'length
+            report "Padded length is not longer than existing length."
+            severity failure;
+
+        assert A'right = 0
+            report "Does not support up-counting ranges."
+            severity failure;
+            
+        B(A'range) := A;
+        B(B'left downto A'left+1) := (others => pad_bit);
+        
+        return B;
+        
+    end pad_left;
     
 end GeneralFuncPkg;
