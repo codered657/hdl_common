@@ -11,12 +11,15 @@
 --                                  2) Added and_reduce and or_reduce.
 --                                  3) Added integer <=> slv conversion functions.
 --                                  4) Added pad_left.
---      Nick Ogden      03/18/14    1) Removed bitwise AND,OR,XOR,NOT
+--      Nick Ogden      03/18/14    1) Removed bitwise AND, OR, XOR, NOT.
+--      Steven Okai     03/24/14    1) Added std_logic_unsigned.
+--                                  2) Added increment() and decrement().
 --
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
 
 package GeneralFuncPkg is
 
@@ -399,5 +402,45 @@ package body GeneralFuncPkg is
         return B;
         
     end pad_left;
+    
+    -- Returns std_logic_vector A incremented by step size step.
+    function increment (A : std_logic_vector, step : natural) return std_logic_vector is
+    
+        begin
+        
+        assert log2(step) <= A'length
+            report "Step size is larger than value."
+            severity failure;
+        
+        return std_logic_vector(unsigned(A) + to_unsigned(step, A'length));
+    end increment;
+    
+    -- Returns std_logic_vector A incremented by 1.
+    function increment (A : std_logic_vector) return std_logic_vector is
+    
+        begin
+        
+        return increment(A, 1);
+    end increment;
+    
+    -- Returns std_logic_vector A decremented by step size step.
+    function decrement (A : std_logic_vector, step : natural) return std_logic_vector is
+    
+        begin
+        
+        assert log2(step) <= A'length
+            report "Step size is larger than value."
+            severity failure;
+        
+        return std_logic_vector(unsigned(A) - to_unsigned(step, A'length));
+    end decrement
+    
+    -- Returns std_logic_vector A decremented by 1.
+    function decrement (A : std_logic_vector) return std_logic_vector is
+    
+        begin
+
+        return decrement(A, 1);
+    end decrement;
     
 end GeneralFuncPkg;
