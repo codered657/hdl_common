@@ -14,6 +14,8 @@
 --      Nick Ogden      03/18/14    1) Removed bitwise AND, OR, XOR, NOT.
 --      Steven Okai     03/24/14    1) Added std_logic_unsigned.
 --                                  2) Added increment() and decrement().
+--      Nick Ogden      03/27/14    1) Added increment and decrement function
+--                                     declarations
 --
 
 library ieee;
