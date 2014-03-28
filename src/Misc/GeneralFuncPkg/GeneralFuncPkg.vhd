@@ -286,19 +286,20 @@ package GeneralFuncPkg is
     type slv_1024_vector is array (natural range <>) of std_logic_vector(1024 downto 0);
     type slv_2048_vector is array (natural range <>) of std_logic_vector(2048 downto 0);
 
-    function and_reduce (A : std_logic_vector) return std_logic_vector;
-    function or_reduce (A : std_logic_vector) return std_logic_vector;
+    function and_reduce (A : std_logic_vector) return std_logic;
+    function or_reduce (A : std_logic_vector) return std_logic;
     
     function log2(x : integer) return integer;
     
     -- Returns unsigned integer representation of the passed std_logic_vector.
     function slv_to_unsigned_int (A : std_logic_vector) return integer;
-    function slv_to_unsigned_int (A : std_logic_vector) return integer;
     function unsigned_int_to_slv (A : natural; slv_width : positive) return std_logic_vector;
     function signed_int_to_slv (A : integer; slv_width : positive) return std_logic_vector;
-    function pad_left (A : std_logic_vector, slv_width : positive; pad_bit : std_logic) return std_logic_vector;
-	function increment (A : std_logic_vector, step : natural) return std_logic_vector;
-	function decrement (A : std_logic_vector, step : natural) return std_logic_vector;
+    function pad_left (A : std_logic_vector; slv_width : positive; pad_bit : std_logic) return std_logic_vector;
+    function increment (A : std_logic_vector) return std_logic_vector;
+	function increment (A : std_logic_vector; step : natural) return std_logic_vector;
+    function decrement (A : std_logic_vector) return std_logic_vector;
+	function decrement (A : std_logic_vector; step : natural) return std_logic_vector;
     
 end package GeneralFuncPkg;
 
@@ -360,12 +361,12 @@ package body GeneralFuncPkg is
     end slv_to_unsigned_int;
     
     -- Returns signed integer representation of the passed std_logic_vector.
-    function slv_to_unsigned_int (A : std_logic_vector) return integer is
+    function slv_to_signed_int (A : std_logic_vector) return integer is
         
         begin
         
         return to_integer(signed(A));
-    end slv_to_unsigned_int;
+    end slv_to_signed_int;
     
     -- Returns the std_logic_vector representation of passed unsigned integer (natural) with width slv_width.
     function unsigned_int_to_slv (A : natural; slv_width : positive) return std_logic_vector is
@@ -386,7 +387,7 @@ package body GeneralFuncPkg is
     end signed_int_to_slv;
     
     -- Pads passed std_logic_vector to width alv_width with bit pad_bit.
-    function pad_left (A : std_logic_vector, slv_width : positive; pad_bit : std_logic) return std_logic_vector is
+    function pad_left (A : std_logic_vector; slv_width : positive; pad_bit : std_logic) return std_logic_vector is
     
         variable B : std_logic_vector(slv_width-1 downto 0);
         
@@ -408,7 +409,7 @@ package body GeneralFuncPkg is
     end pad_left;
     
     -- Returns std_logic_vector A incremented by step size step.
-    function increment (A : std_logic_vector, step : natural) return std_logic_vector is
+    function increment (A : std_logic_vector; step : natural) return std_logic_vector is
     
         begin
         
@@ -428,7 +429,7 @@ package body GeneralFuncPkg is
     end increment;
     
     -- Returns std_logic_vector A decremented by step size step.
-    function decrement (A : std_logic_vector, step : natural) return std_logic_vector is
+    function decrement (A : std_logic_vector; step : natural) return std_logic_vector is
     
         begin
         
@@ -437,7 +438,7 @@ package body GeneralFuncPkg is
             severity failure;
         
         return std_logic_vector(unsigned(A) - to_unsigned(step, A'length));
-    end decrement
+    end decrement;
     
     -- Returns std_logic_vector A decremented by 1.
     function decrement (A : std_logic_vector) return std_logic_vector is
