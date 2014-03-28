@@ -295,6 +295,8 @@ package GeneralFuncPkg is
     function unsigned_int_to_slv (A : natural; slv_width : positive) return std_logic_vector;
     function signed_int_to_slv (A : integer; slv_width : positive) return std_logic_vector;
     function pad_left (A : std_logic_vector, slv_width : positive; pad_bit : std_logic) return std_logic_vector;
+	function increment (A : std_logic_vector, step : natural) return std_logic_vector;
+	function decrement (A : std_logic_vector, step : natural) return std_logic_vector;
     
 end package GeneralFuncPkg;
 
