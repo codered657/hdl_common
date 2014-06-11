@@ -7,6 +7,7 @@
 --
 --  Revision History:
 --      Steven Okai     03/17/14    1) Initial revision.
+--      Steven Okai     06/10/14    1) Fixed compile errors.
 --
 
 library ieee;
@@ -19,7 +20,7 @@ entity ResetSynchronizer is
     port (
         Clk      : in  std_logic;
         ResetIn  : in  std_logic;
-        ResetOut : in  std_logic
+        ResetOut : out std_logic
     );
 end entity ResetSynchronizer;
 
@@ -31,16 +32,16 @@ architecture RTL of ResetSynchronizer is
     begin
     
     process (Clk, ResetIn)
+        begin
         -- Assert reset asynchronously.
         if (ResetIn = '1') then
             SyncStages <= (others => '1');
             
         -- Release reset synchronously.
-        else if (rising_edge(Clk)) then
+        elsif (rising_edge(Clk)) then
             SyncStages <= '0' & SyncStages(0 to SyncStages'high-1);
             
         end if;
-        
     end process;
     
     -- Output of last synchronization register is synchronized reset.
