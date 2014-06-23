@@ -16,6 +16,7 @@
 --                                  2) Added increment() and decrement().
 --      Nick Ogden      03/27/14    1) Added increment and decrement function
 --                                     declarations
+--      Steven Okai     06/22/14    1) Added negate() and pad_right().
 --
 
 library ieee;
@@ -296,10 +297,12 @@ package GeneralFuncPkg is
     function unsigned_int_to_slv (A : natural; slv_width : positive) return std_logic_vector;
     function signed_int_to_slv (A : integer; slv_width : positive) return std_logic_vector;
     function pad_left (A : std_logic_vector; slv_width : positive; pad_bit : std_logic) return std_logic_vector;
+    function pad_right (A : std_logic_vector; slv_width : positive; pad_bit : std_logic) return std_logic_vector;
     function increment (A : std_logic_vector) return std_logic_vector;
 	function increment (A : std_logic_vector; step : natural) return std_logic_vector;
     function decrement (A : std_logic_vector) return std_logic_vector;
 	function decrement (A : std_logic_vector; step : natural) return std_logic_vector;
+    function negate (A : std_logic_vector) return std_logic_vector;
     
 end package GeneralFuncPkg;
 
@@ -386,7 +389,7 @@ package body GeneralFuncPkg is
         
     end signed_int_to_slv;
     
-    -- Pads passed std_logic_vector to width alv_width with bit pad_bit.
+    -- Left pads passed std_logic_vector to width slv_width with bit pad_bit.
     function pad_left (A : std_logic_vector; slv_width : positive; pad_bit : std_logic) return std_logic_vector is
     
         variable B : std_logic_vector(slv_width-1 downto 0);
@@ -407,6 +410,28 @@ package body GeneralFuncPkg is
         return B;
         
     end pad_left;
+    
+    -- Right pads passed std_logic_vector to width slv_width with bit pad_bit.
+    function pad_right (A : std_logic_vector; slv_width : positive; pad_bit : std_logic) return std_logic_vector is
+    
+        variable B : std_logic_vector(slv_width-1 downto 0);
+        
+        begin
+        
+        assert slv_width > A'length
+            report "Padded length is not longer than existing length."
+            severity failure;
+
+        assert A'right = 0
+            report "Does not support up-counting ranges."
+            severity failure;
+            
+        B(B'left downto B'left-A'length+1) := A;
+        B(B'left-A'length downto 0) := (others => pad_bit);
+        
+        return B;
+        
+    end pad_right;
     
     -- Returns std_logic_vector A incremented by step size step.
     function increment (A : std_logic_vector; step : natural) return std_logic_vector is
@@ -447,5 +472,13 @@ package body GeneralFuncPkg is
 
         return decrement(A, 1);
     end decrement;
+    
+    -- Returns the negation of the passed std_logic_vector interpreted as a signed integer.
+    function negate (A : std_logic_vector) return std_logic_vector is
+        constant Zero   : signed(A'range) := (others=>'0');
+        begin
+        
+        return std_logic_vector(Zero - signed(A));
+    end negate;
     
 end GeneralFuncPkg;
