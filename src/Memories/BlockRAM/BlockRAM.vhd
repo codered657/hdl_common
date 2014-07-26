@@ -4,14 +4,15 @@
 --
 --  Notes: http://www.xilinx.com/support/documentation/white_papers/wp231.pdf
 --         http://vhdlguru.blogspot.com/2011/01/block-and-distributed-rams-on-xilinx.html
+--         http://danstrother.com/2010/09/11/inferring-rams-in-fpgas/
 --
 --  Revision History:
 --      Steven Okai     03/18/14    1) Initial revision.
+--      Steven Okai     07/26/14    1) Changed to true dual-port RAM.
 --
 
 library ieee;
 use ieee.std_logic_1164.all;
-
 use work.GeneralFuncPkg.all;
 
 entity BlockRAM is
@@ -20,39 +21,50 @@ entity BlockRAM is
         WIDTH   : positive
     );
     port (
-        Clk     : in  std_logic;
-        Address : in  std_logic_vector(log2(Depth)-1 downto 0);
-        WriteEn : in  std_logic;
+        ClkA        : in  std_logic;
+        AddressA    : in  std_logic_vector(log2(DEPTH)-1 downto 0);
+        WriteEnA    : in  std_logic;
+        DataInA     : in  std_logic_vector(WIDTH-1 downto 0);
+        DataOutA    : out std_logic_vector(WIDTH-1 downto 0);
         
-        DataIn  : in  std_logic_vector(WIDTH-1 downto 0);
-        DataOut : out std_logic_vector(WIDTH-1 downto 0)
+        ClkB        : in  std_logic;
+        AddressB    : in  std_logic_vector(log2(DEPTH)-1 downto 0);
+        WriteEnB    : in  std_logic;
+        DataInB     : in  std_logic_vector(WIDTH-1 downto 0);
+        DataOutB    : out std_logic_vector(WIDTH-1 downto 0)
     );
 end entity BlockRAM;
+    
+architecture rtl of BlockRAM is
 
     type memory is array (0 to DEPTH-1) of std_logic_vector(WIDTH-1 downto 0);
     
-    signal ram : memory;
+    shared variable ram : memory;
     attribute ram_style : string;
-    attribute ram_style of ram : signal is "block"; -- Ensure block RAM is used in synthesis.
+    attribute ram_style of ram : variable is "block"; -- Ensure block RAM is used in synthesis.
     
-architecture RTL of BlockRAM is
-
     begin
     
-    process (Clk)
-    
+    port_a : process (ClkA)
         begin
-        
-        if (rising_edge(Clk)) then
-        
+        if (rising_edge(ClkA)) then
             -- If write enable set, update value in RAM.
-            if (WriteEn = '1') then
-                ram(slv_to_unsigned_int(Address)) <= DataIn;
-            -- Otherwise, read out value.
-            else
-                DataOut <= ram(slv_to_unsigned_int(Address));
+            if (WriteEnA = '1') then
+                ram(slv_to_unsigned_int(AddressA)) := DataInA;
             end if;
-        
+            DataOutA <= ram(slv_to_unsigned_int(AddressA)); -- Read out value on port A.
         end if;
-        
-end architecture RTL;
+    end process port_a;
+    
+    port_b : process (ClkB)
+        begin
+        if (rising_edge(ClkB)) then
+            -- If write enable set, update value in RAM.
+            if (WriteEnB = '1') then
+                ram(slv_to_unsigned_int(AddressB)) := DataInB;
+            end if;
+            DataOutB <= ram(slv_to_unsigned_int(AddressB)); -- Read out value on port B.
+        end if;
+    end process port_b;
+    
+end architecture rtl;

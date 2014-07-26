@@ -17,6 +17,9 @@
 --      Nick Ogden      03/27/14    1) Added increment and decrement function
 --                                     declarations
 --      Steven Okai     06/22/14    1) Added negate() and pad_right().
+--      Steven Okai     07/26/14    1) Added trunc_left/right(), sign_extend(),
+--                                     xor_reduce(), bool_to_sl(), append_left/right(),
+--                                     shift_right_logical(), reverse().
 --
 
 library ieee;
@@ -289,20 +292,29 @@ package GeneralFuncPkg is
 
     function and_reduce (A : std_logic_vector) return std_logic;
     function or_reduce (A : std_logic_vector) return std_logic;
+    function xor_reduce (A : std_logic_vector) return std_logic;
     
     function log2(x : integer) return integer;
     
     -- Returns unsigned integer representation of the passed std_logic_vector.
+    function bool_to_sl (A : boolean) return std_logic;
     function slv_to_unsigned_int (A : std_logic_vector) return integer;
     function unsigned_int_to_slv (A : natural; slv_width : positive) return std_logic_vector;
     function signed_int_to_slv (A : integer; slv_width : positive) return std_logic_vector;
     function pad_left (A : std_logic_vector; slv_width : positive; pad_bit : std_logic) return std_logic_vector;
     function pad_right (A : std_logic_vector; slv_width : positive; pad_bit : std_logic) return std_logic_vector;
+    function append_left (A : std_logic_vector; num_append_bits : natural; append_bit : std_logic) return std_logic_vector;
+    function append_right (A : std_logic_vector; num_append_bits : natural; append_bit : std_logic) return std_logic_vector;
+    function sign_extend (A : std_logic_vector; slv_width : positive) return std_logic_vector;
+    function trunc_left (A : std_logic_vector; slv_width : positive) return std_logic_vector;
+    function trunc_right (A : std_logic_vector; slv_width : positive) return std_logic_vector;
     function increment (A : std_logic_vector) return std_logic_vector;
 	function increment (A : std_logic_vector; step : natural) return std_logic_vector;
     function decrement (A : std_logic_vector) return std_logic_vector;
 	function decrement (A : std_logic_vector; step : natural) return std_logic_vector;
     function negate (A : std_logic_vector) return std_logic_vector;
+    function shift_right_logical (A : std_logic_vector; shift : natural) return std_logic_vector;
+    function reverse (A : std_logic_vector) return std_logic_vector;
     
 end package GeneralFuncPkg;
 
@@ -337,6 +349,20 @@ package body GeneralFuncPkg is
         
     end or_reduce;
     
+    function xor_reduce (A : std_logic_vector) return std_logic is
+    
+        variable B : std_logic := '0';
+        begin
+        
+        -- Or all bits together.
+        for i in A'range loop
+            B := B xor A(i);
+        end loop;
+        
+        return B;   -- Return result.
+        
+    end xor_reduce;
+    
     -- This function returns ceil(log2(x)).
     function log2 (x : integer) return integer is
         variable xTemp : integer := x; -- Make a copy of x.
@@ -354,6 +380,18 @@ package body GeneralFuncPkg is
         return DivCount;
         
     end log2;
+    
+    -- Returns std_logic representation of passed boolean.
+    function bool_to_sl (A : boolean) return std_logic is
+        variable B  : std_logic;
+        begin
+        if (A) then
+            B := '1';
+        else
+            B := '0';
+        end if;
+        return B;
+    end bool_to_sl;
     
     -- Returns unsigned integer representation of the passed std_logic_vector.
     function slv_to_unsigned_int (A : std_logic_vector) return integer is
@@ -400,7 +438,7 @@ package body GeneralFuncPkg is
             report "Padded length is not longer than existing length."
             severity failure;
 
-        assert A'right = 0
+        assert A'right = A'low
             report "Does not support up-counting ranges."
             severity failure;
             
@@ -422,7 +460,7 @@ package body GeneralFuncPkg is
             report "Padded length is not longer than existing length."
             severity failure;
 
-        assert A'right = 0
+        assert A'right = A'low
             report "Does not support up-counting ranges."
             severity failure;
             
@@ -432,6 +470,63 @@ package body GeneralFuncPkg is
         return B;
         
     end pad_right;
+    
+    function append_left (A : std_logic_vector; num_append_bits : natural; append_bit : std_logic) return std_logic_vector is
+        
+        variable B  : std_logic_vector(A'length+num_append_bits-1 downto 0);
+        
+        begin
+        
+        assert A'right = A'low
+            report "Does not support up-counting ranges."
+            severity failure;
+            
+        B(A'range) := A;
+        B(B'left downto A'left+1) := (others => append_bit);
+        
+        return B;
+        
+    end append_left;
+    
+    function append_right (A : std_logic_vector; num_append_bits : natural; append_bit : std_logic) return std_logic_vector is
+        
+        variable B  : std_logic_vector(A'length+num_append_bits-1 downto 0);
+        
+        begin
+        
+        assert A'right = A'low
+            report "Does not support up-counting ranges."
+            severity failure;
+            
+        B(B'left downto B'left-A'length+1) := A;
+        B(B'left-A'length downto 0) := (others => append_bit);
+        
+        return B;
+    end append_right;
+    
+    function sign_extend (A : std_logic_vector; slv_width : positive) return std_logic_vector is
+        
+        begin
+        
+        return pad_left(A, slv_width, A(A'high));
+        
+    end sign_extend;
+    
+    function trunc_left (A : std_logic_vector; slv_width : positive) return std_logic_vector is
+        
+        begin
+        
+        return A(slv_width-1 downto 0);
+        
+    end trunc_left;
+    
+    function trunc_right (A : std_logic_vector; slv_width : positive) return std_logic_vector is
+        
+        begin
+        
+        return A(A'high downto A'high-slv_width+1);
+        
+    end trunc_right;
     
     -- Returns std_logic_vector A incremented by step size step.
     function increment (A : std_logic_vector; step : natural) return std_logic_vector is
@@ -480,5 +575,19 @@ package body GeneralFuncPkg is
         
         return std_logic_vector(Zero - signed(A));
     end negate;
+    
+    function shift_right_logical (A : std_logic_vector; shift : natural) return std_logic_vector is
+        begin
+        return pad_left(A(A'high downto shift), A'length, '0');
+    end shift_right_logical;
+    
+    function reverse (A : std_logic_vector) return std_logic_vector is
+        variable B  : std_logic_vector(A'length-1 downto 0);
+        begin
+        for i in A'range loop
+            B(A'high-i) := A(i);
+        end loop;
+        return B;
+    end reverse;
     
 end GeneralFuncPkg;
