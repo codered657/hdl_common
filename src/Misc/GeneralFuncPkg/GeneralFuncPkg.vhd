@@ -438,11 +438,7 @@ package body GeneralFuncPkg is
             report "Padded length is not longer than existing length."
             severity failure;
 
-        assert A'right = A'low
-            report "Does not support up-counting ranges."
-            severity failure;
-            
-        B(A'range) := A;
+        B(A'length-1 downto 0) := A;
         B(B'left downto A'left+1) := (others => pad_bit);
         
         return B;
@@ -460,10 +456,6 @@ package body GeneralFuncPkg is
             report "Padded length is not longer than existing length."
             severity failure;
 
-        assert A'right = A'low
-            report "Does not support up-counting ranges."
-            severity failure;
-            
         B(B'left downto B'left-A'length+1) := A;
         B(B'left-A'length downto 0) := (others => pad_bit);
         

@@ -73,16 +73,17 @@ package body CommandBusPkg is
         begin
         
         wait until rising_edge(Clk);
-        CmdBusIn.Address <= pad_right(Address, CmdBusIn.Address'length, '0');
-        CmdBusIn.Data <= pad_right(Data, CmdBusIn.Data'length, '0');
+        CmdBusIn.Address <= pad_left(Address, CmdBusIn.Address'length, '0');
+        CmdBusIn.Data <= pad_left(Data, CmdBusIn.Data'length, '0');
         CmdBusIn.Write <= '1';
-        
-        while (CmdBusOut.Ack = '0') loop
+
+        while (CmdBusOut.Ack /= '1') loop
             wait until rising_edge(Clk);
         end loop;
         
         -- TODO: should we wait on more clock before deasserting?
         CmdBusIn <= CMD_BUS_IN_IDLE;
+        wait until rising_edge(Clk);
         
     end cmd_bus_write;
     
@@ -97,17 +98,18 @@ package body CommandBusPkg is
         begin
         
         wait until rising_edge(Clk);
-        CmdBusIn.Address <= pad_right(Address, CmdBusIn.Address'length, '0');
+        CmdBusIn.Address <= pad_left(Address, CmdBusIn.Address'length, '0');
         CmdBusIn.Read <= '1';
-        
-        while (CmdBusOut.Ack = '0') loop
+
+        while (CmdBusOut.Ack /= '1') loop
             wait until rising_edge(Clk);
         end loop;
-        
-        Data := CmdBusOut.Data(Data'range); -- Immediately latch data.
-        
+
+        Data := CmdBusOut.Data(Data'length-1 downto 0); -- Immediately latch data.
+
         -- TODO: should we wait on more clock before deasserting?
         CmdBusIn <= CMD_BUS_IN_IDLE;
+        wait until rising_edge(Clk);
         
     end cmd_bus_read;
     
@@ -118,13 +120,14 @@ package body CommandBusPkg is
         signal CmdBusIn     : out cmd_bus_in;
         signal CmdBusOut    : in  cmd_bus_out
         ) is
-        variable ReadData   : std_logic_vector(Data'range);
+        variable WriteData  : std_logic_vector(Data'length-1 downto 0);
+        variable ReadData   : std_logic_vector(Data'length-1 downto 0);
         begin
-        
-        cmd_bus_write(Address, Data, Clk, CmdBusIn, CmdBusOut);
+        WriteData := Data;
+        cmd_bus_write(Address, WriteData, Clk, CmdBusIn, CmdBusOut);
         cmd_bus_read(Address, ReadData, Clk, CmdBusIn, CmdBusOut);
-        
-        assert (ReadData = Data) report "Read data does not match written data." severity FAILURE;
+
+        assert (ReadData = WriteData) report "Read data does not match written data." severity FAILURE;
     end cmd_bus_write_verify;
     
 end CommandBusPkg;
