@@ -20,6 +20,9 @@
 --      Steven Okai     07/26/14    1) Added trunc_left/right(), sign_extend(),
 --                                     xor_reduce(), bool_to_sl(), append_left/right(),
 --                                     shift_right_logical(), reverse().
+--      Steven Okai     08/23/14    1) Removed dependence on slv arguments being downto.
+--                                  2) Added shift_right_arith(), shift_left(),
+--                                     rotate_left/right(), and replicate().
 --
 
 library ieee;
@@ -314,6 +317,11 @@ package GeneralFuncPkg is
 	function decrement (A : std_logic_vector; step : natural) return std_logic_vector;
     function negate (A : std_logic_vector) return std_logic_vector;
     function shift_right_logical (A : std_logic_vector; shift : natural) return std_logic_vector;
+    function shift_right_arith (A : std_logic_vector; shift : natural) return std_logic_vector;
+    function shift_left (A : std_logic_vector; shift : natural) return std_logic_vector;
+    function rotate_right (A : std_logic_vector; shift : natural) return std_logic_vector;
+    function rotate_left (A : std_logic_vector; shift : natural) return std_logic_vector;
+    function replicate (A : std_logic; slv_width : positive) return std_logic_vector;
     function reverse (A : std_logic_vector) return std_logic_vector;
     
 end package GeneralFuncPkg;
@@ -429,8 +437,8 @@ package body GeneralFuncPkg is
     
     -- Left pads passed std_logic_vector to width slv_width with bit pad_bit.
     function pad_left (A : std_logic_vector; slv_width : positive; pad_bit : std_logic) return std_logic_vector is
-    
-        variable B : std_logic_vector(slv_width-1 downto 0);
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
+        variable B      : std_logic_vector(slv_width-1 downto 0);
         
         begin
         
@@ -438,8 +446,8 @@ package body GeneralFuncPkg is
             report "Padded length is not longer than existing length."
             severity failure;
 
-        B(A'length-1 downto 0) := A;
-        B(B'left downto A'left+1) := (others => pad_bit);
+        B(AInt'range) := AInt;
+        B(B'high downto AInt'high+1) := (others => pad_bit);
         
         return B;
         
@@ -447,76 +455,68 @@ package body GeneralFuncPkg is
     
     -- Right pads passed std_logic_vector to width slv_width with bit pad_bit.
     function pad_right (A : std_logic_vector; slv_width : positive; pad_bit : std_logic) return std_logic_vector is
-    
-        variable B : std_logic_vector(slv_width-1 downto 0);
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
+        variable B      : std_logic_vector(slv_width-1 downto 0);
         
         begin
         
         assert slv_width > A'length
             report "Padded length is not longer than existing length."
             severity failure;
+            
+        B(B'high downto B'high-AInt'length+1) := AInt;
+        B(B'high-AInt'length downto 0) := (others => pad_bit);
 
-        B(B'left downto B'left-A'length+1) := A;
-        B(B'left-A'length downto 0) := (others => pad_bit);
-        
         return B;
         
     end pad_right;
     
     function append_left (A : std_logic_vector; num_append_bits : natural; append_bit : std_logic) return std_logic_vector is
-        
-        variable B  : std_logic_vector(A'length+num_append_bits-1 downto 0);
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
+        variable B      : std_logic_vector(A'length+num_append_bits-1 downto 0);
         
         begin
         
-        assert A'right = A'low
-            report "Does not support up-counting ranges."
-            severity failure;
-            
-        B(A'range) := A;
-        B(B'left downto A'left+1) := (others => append_bit);
+        B(AInt'range) := AInt;
+        B(B'high downto AInt'high+1) := (others => append_bit);
         
         return B;
         
     end append_left;
     
     function append_right (A : std_logic_vector; num_append_bits : natural; append_bit : std_logic) return std_logic_vector is
-        
-        variable B  : std_logic_vector(A'length+num_append_bits-1 downto 0);
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
+        variable B      : std_logic_vector(A'length+num_append_bits-1 downto 0);
         
         begin
         
-        assert A'right = A'low
-            report "Does not support up-counting ranges."
-            severity failure;
-            
-        B(B'left downto B'left-A'length+1) := A;
-        B(B'left-A'length downto 0) := (others => append_bit);
+        B(B'high downto B'high-AInt'length+1) := AInt;
+        B(B'high-AInt'length downto 0) := (others => append_bit);
         
         return B;
     end append_right;
     
     function sign_extend (A : std_logic_vector; slv_width : positive) return std_logic_vector is
-        
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
         begin
         
-        return pad_left(A, slv_width, A(A'high));
+        return pad_left(AInt, slv_width, AInt(AInt'high));
         
     end sign_extend;
     
     function trunc_left (A : std_logic_vector; slv_width : positive) return std_logic_vector is
-        
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
         begin
         
-        return A(slv_width-1 downto 0);
+        return AInt(slv_width-1 downto 0);
         
     end trunc_left;
     
     function trunc_right (A : std_logic_vector; slv_width : positive) return std_logic_vector is
-        
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
         begin
         
-        return A(A'high downto A'high-slv_width+1);
+        return AInt(AInt'high downto AInt'high-slv_width+1);
         
     end trunc_right;
     
@@ -568,16 +568,51 @@ package body GeneralFuncPkg is
         return std_logic_vector(Zero - signed(A));
     end negate;
     
+    -- TODO: add argument checking for shifts and rotates???
     function shift_right_logical (A : std_logic_vector; shift : natural) return std_logic_vector is
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
         begin
-        return pad_left(A(A'high downto shift), A'length, '0');
+        return pad_left(AInt(AInt'high downto shift), AInt'length, '0');
     end shift_right_logical;
     
-    function reverse (A : std_logic_vector) return std_logic_vector is
-        variable B  : std_logic_vector(A'length-1 downto 0);
+    function shift_right_arith (A : std_logic_vector; shift : natural) return std_logic_vector is
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
         begin
-        for i in A'range loop
-            B(A'high-i) := A(i);
+        return sign_extend(AInt(AInt'high downto shift), AInt'length);
+    end shift_right_arith;
+    
+    -- TODO: add a function to shift in copy of low bit (arith shift???)
+    function shift_left (A : std_logic_vector; shift : natural) return std_logic_vector is
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
+        begin
+        return pad_right(AInt(AInt'high-shift downto 0), AInt'length, '0');
+    end shift_left;
+    
+    function rotate_right (A : std_logic_vector; shift : natural) return std_logic_vector is
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
+        begin
+        return AInt(shift-1 downto 0) & AInt(AInt'high downto shift);
+    end rotate_right;
+    
+    function rotate_left (A : std_logic_vector; shift : natural) return std_logic_vector is
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
+        begin
+        return AInt(AInt'high-shift downto 0) & AInt(AInt'high downto A'high-shift+1);
+    end rotate_left;
+    
+    function replicate (A : std_logic; slv_width : positive) return std_logic_vector is
+        variable B  : std_logic_vector(slv_width-1 downto 0);
+        begin
+        B := (others=>A);
+        return B;
+    end replicate;
+    
+    function reverse (A : std_logic_vector) return std_logic_vector is
+        variable AInt   : std_logic_vector(A'length-1 downto 0) := A;
+        variable B      : std_logic_vector(A'length-1 downto 0);
+        begin
+        for i in B'range loop
+            B(B'high-i) := AInt(i);
         end loop;
         return B;
     end reverse;

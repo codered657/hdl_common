@@ -6,6 +6,7 @@
 --
 --  Revision History:
 --      Steven Okai     07/31/14    1) Initial revision.
+--      Steven Okai     08/23/14    1) Removed dependence on slv arguments being downto.
 --
 
 library ieee;
