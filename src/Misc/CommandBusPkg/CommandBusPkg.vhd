@@ -6,6 +6,7 @@
 --
 --  Revision History:
 --      Steven Okai     07/31/14    1) Initial revision.
+--      Steven Okai     08/23/14    1) Removed dependence on slv arguments being downto.
 --
 
 library ieee;
@@ -104,7 +105,7 @@ package body CommandBusPkg is
             wait until rising_edge(Clk);
         end loop;
         
-        Data := CmdBusOut.Data(Data'range); -- Immediately latch data.
+        Data := CmdBusOut.Data(Data'length-1 downto 0); -- Immediately latch data.
         
         -- TODO: should we wait on more clock before deasserting?
         CmdBusIn <= CMD_BUS_IN_IDLE;
@@ -118,7 +119,7 @@ package body CommandBusPkg is
         signal CmdBusIn     : out cmd_bus_in;
         signal CmdBusOut    : in  cmd_bus_out
         ) is
-        variable ReadData   : std_logic_vector(Data'range);
+        variable ReadData   : std_logic_vector(Data'length-1 downto 0);
         begin
         
         cmd_bus_write(Address, Data, Clk, CmdBusIn, CmdBusOut);
